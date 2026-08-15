@@ -15,5 +15,7 @@ namespace RoyalVillaAPI.Models
         public string? ImageUrl { get; set; } // có thể nhận giá trị null
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
+
+        public ICollection<VillaAmenities>? Amenities { get; set; }
     }
 }

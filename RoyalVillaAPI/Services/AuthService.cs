@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using RoyalVillaAPI.Data;
-using RoyalVillaAPI.Models.DTO;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using RoyalVillaAPI.Models;
@@ -8,6 +7,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using RoyalVillaDTO;
 
 namespace RoyalVillaAPI.Services
 {

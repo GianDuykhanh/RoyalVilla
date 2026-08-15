@@ -1,12 +1,36 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using RoyalVillaAPI.Data;
 using RoyalVillaAPI.Models;
-using RoyalVillaAPI.Models.DTO;
 using RoyalVillaAPI.Services;
+using RoyalVillaDTO;
 using Scalar.AspNetCore;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+var key = Encoding.ASCII.GetBytes(builder.Configuration.GetSection("JwtSettings")["Secret"]);
 
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddCors();
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -16,7 +40,35 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new();
+        document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
+        {
+            ["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter JWT Bearer token"
+            }
+        };
+
+        document.Security =
+        [
+            new OpenApiSecurityRequirement
+            {
+                {new OpenApiSecuritySchemeReference("Bearer"), new List<string>() }
+            }
+        ];
+
+        return Task.CompletedTask;
+    });
+});
+
+
 builder.Services.AddAutoMapper(o =>
 {
     o.CreateMap<Villa, VillaCreateDTO>().ReverseMap();
@@ -24,6 +76,10 @@ builder.Services.AddAutoMapper(o =>
     o.CreateMap<Villa, VillaDTO>().ReverseMap();
     o.CreateMap<VillaUpdateDTO, VillaDTO>().ReverseMap();
     o.CreateMap<User, UserDTO>().ReverseMap();
+    o.CreateMap<VillaAmenities, VillaAmenitiesCreateDTO>().ReverseMap();
+    o.CreateMap<VillaAmenities, VillaAmenitiesUpdateDTO>().ReverseMap();
+    o.CreateMap<VillaAmenities, VillaAmenitiesDTO>().ForMember(dest => dest.VillaName, opt => opt.MapFrom(src => src.Villa != null ? src.Villa.Name : null));
+    o.CreateMap<VillaAmenitiesDTO, VillaAmenities>();
 });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -40,7 +96,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseCors(o => o.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("*"));
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

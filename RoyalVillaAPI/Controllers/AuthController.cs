@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using RoyalVillaAPI.Models.DTO;
 using RoyalVillaAPI.Services;
+using RoyalVillaDTO;
 
 namespace RoyalVillaAPI.Controllers
 {
