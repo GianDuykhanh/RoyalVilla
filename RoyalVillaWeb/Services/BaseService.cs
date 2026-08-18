@@ -1,4 +1,4 @@
-﻿using RoyalVillaDTO;
+using RoyalVillaDTO;
 using RoyalVillaWeb.Models;
 using RoyalVillaWeb.Services.IServices;
 using System.Text.Json;
