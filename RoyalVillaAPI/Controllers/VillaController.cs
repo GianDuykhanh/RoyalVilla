@@ -11,7 +11,7 @@ namespace RoyalVillaAPI.Controllers
     {
         [Route("api/villa")]
         [ApiController]
-        [Authorize(Roles = "Customer, Admin")]    
+        // [Authorize(Roles = "Customer, Admin")]    
         public class VillaController : ControllerBase
         {
             private readonly ApplicationDbContext _db;
@@ -24,87 +24,15 @@ namespace RoyalVillaAPI.Controllers
             }
 
             [HttpGet]
-            //[Authorize(Roles = "Admin")]
+            // [Authorize(Roles = "Admin")]
             [AllowAnonymous]
             [ProducesResponseType(typeof(ApiResponse<IEnumerable<VillaDTO>>), StatusCodes.Status200OK)]
             [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
-            public async Task<ActionResult<ApiResponse<List<VillaDTO>>>> GetVillas([FromQuery] string? filterBy, 
-                [FromQuery] string? filterQuery, [FromQuery] string? sortBy, [FromQuery] string? sortOrder = "asc",
-                [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+            public async Task<ActionResult<ApiResponse<List<VillaDTO>>>> GetVillas()
             {
-                if(page < 1) page = 1;
-                if(pageSize < 1) pageSize = 10;
-                if(pageSize > 100) pageSize = 100;
-                
-                var villasQuery = _db.Villa.AsQueryable();
-                if(!string.IsNullOrEmpty(filterQuery) && !string.IsNullOrEmpty(filterBy))
-                {
-                    switch (filterBy.ToLower())
-                    {
-                        case "name":
-                            villasQuery = villasQuery.Where(u => u.Name.ToLower().Contains(filterQuery.ToLower()));
-                            break;
-                        case "details":
-                            villasQuery = villasQuery.Where(u => u.Details.ToLower().Contains(filterQuery.ToLower()));
-                            break;
-                        case "rate":
-                            if (double.TryParse(filterQuery, out double rate))
-                            {
-                                villasQuery = villasQuery.Where(u => u.Rate == rate);
-                            }
-                            break;
-                        case "minrate":
-                            if (double.TryParse(filterQuery, out double minrate))
-                            {
-                                villasQuery = villasQuery.Where(u => u.Rate >= minrate);
-                            }
-                            break;
-                        case "maxrate":
-                            if (double.TryParse(filterQuery, out double maxrate))
-                            {
-                                villasQuery = villasQuery.Where(u => u.Rate <= maxrate);
-                            }
-                            break;
-                        case "occupancy":
-                            if (int.TryParse(filterQuery, out int occupancy))
-                            {
-                                villasQuery = villasQuery.Where(u => u.Occupancy == occupancy);
-                            }
-                            break;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(sortBy))
-                {
-                    var isDescending = sortOrder?.ToLower() == "desc";
-
-                    villasQuery = sortBy.ToLower() switch
-                    {
-                        "name" => isDescending ? villasQuery.OrderByDescending(u => u.Name)
-                            : villasQuery.OrderBy(u => u.Name),
-                        "rate" => isDescending ? villasQuery.OrderByDescending(u => u.Rate)
-                            : villasQuery.OrderBy(u => u.Rate),
-                        "occupancy" => isDescending ? villasQuery.OrderByDescending(u => u.Occupancy)
-                            : villasQuery.OrderBy(u => u.Occupancy),
-                        "sqft" => isDescending ? villasQuery.OrderByDescending(u => u.Sqft)
-                            : villasQuery.OrderBy(u => u.Sqft),
-                        "id" => isDescending ? villasQuery.OrderByDescending(u => u.Id)
-                            : villasQuery.OrderBy(u => u.Id),
-                        _ => villasQuery.OrderBy(u => u.Id)
-                    };
-                }
-                else
-                {
-                    villasQuery = villasQuery.OrderBy(u => u.Id);
-                }
-                
-                // page 5, pageSize 10
-                var skip = (page - 1) * pageSize;
-                
-                var villas = await villasQuery.Skip(skip).Take(pageSize).ToListAsync();
-                var dtoResponse = _mapper.Map<List<VillaDTO>>(villas);
-                var response = ApiResponse<IEnumerable<VillaDTO>>.Ok(dtoResponse, "Villas retrieved successfully");
-                //var response = ApiResponse<IEnumerable<VillaDTO>>.Ok(dtoResponseVilla, "Villas retrieved successfully");
+                var villas = await _db.Villa.ToListAsync();
+                var dtoResponseVilla = _mapper.Map<List<VillaDTO>>(villas);
+                var response = ApiResponse<IEnumerable<VillaDTO>>.Ok(dtoResponseVilla, "Villas retrieved successfully");
                 return Ok(response);
             }
 
